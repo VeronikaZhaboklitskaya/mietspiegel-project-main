@@ -96,10 +96,10 @@ mapview_layout = dmc.Group(
         ),
         html.Div(
             [
-                html.Img(
-                    src="/assets/wohnlagenkarte2024.png",
-                    style={"width": "750px", "border-radius": "20px",}
-                ),
+                # html.Img(
+                #     src="/assets/wohnlagenkarte2024.png",
+                #     style={"width": "750px", "border-radius": "20px",}
+                # ),
             ],
             style={
                 "height": 550,

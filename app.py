@@ -4,7 +4,7 @@ import plotly.express as px
 import pandas as pd
 from dash_iconify import DashIconify
 from components.mapview import mapview_layout, register_callbacks_mapview
-from components.calculator import calculator_layout
+from components.calculator import calculator_layout, register_callbacks_calculator
 from components.trends import trends_layout
 
 app = Dash(
@@ -129,6 +129,7 @@ layout = dmc.AppShell(
 app.layout = dmc.MantineProvider(layout)
 
 register_callbacks_mapview(app)
+register_callbacks_calculator(app)
 
 @callback(Output("tabs-content", "children"), Input("tabs", "value"))
 def render_content(active):
