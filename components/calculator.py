@@ -77,7 +77,7 @@ calculator_layout = dmc.Group(
                 
             ],
             style={
-                "height": 600,
+                "height": 620,
                 "width": 400,
                 "background": "#FCFAEE", 
                 "padding": 20, 
@@ -86,7 +86,8 @@ calculator_layout = dmc.Group(
             }
         ),
         html.Div(
-            [
+            id="calculator-container",
+            children=[
                 dmc.Button(
                     "Calculate Comparison",
                     id="calculate-comparison-button",
@@ -101,24 +102,37 @@ calculator_layout = dmc.Group(
                 html.Div(id='body-div'),
             ],
             style={
-                "height": 600,
+                "height": 620,
                 "width": 500,
                 "background": "#FCFAEE", 
                 "border-radius": 20,
                 "display": "flex",
+                "flexDirection": "column",
                 "justifyContent": "center",
                 "alignItems": "center",
                 "border": "2px solid #384B70",
+                "padding": "20px",
             }
         )
     ]
 )
 
-def compare_to_median_rent(street, house_number, postcode, apartment_size, construction_year,  offered_rent) -> float:
+def compare_to_median_rent(street, house_number, postcode, apartment_size, construction_year,  offered_rent) -> dict | None:
+
+    try:
+        offered_rent = float(str(offered_rent).replace(",", "."))
+        apartment_size = float(str(apartment_size).replace(",", "."))
+        construction_year = int(str(construction_year)[:4])
+    except (TypeError, ValueError):
+        return None
     
-    location_quality = get_location_quality(street, house_number, postcode)
-    if isinstance(construction_year, str):
-        construction_year = int(construction_year[:4])
+    location_data = get_location_data(street, house_number, postcode)
+
+    if location_data is None:
+        return None
+    
+    location_quality = location_data["wol"]
+    stadtteil = location_data["stadtteil"].lower()
 
     if location_quality is None:
         return None
@@ -127,25 +141,64 @@ def compare_to_median_rent(street, house_number, postcode, apartment_size, const
     current_mietspiegel_table = pd.read_csv(csv_path)
 
     if location_quality == "einfach":
+        location_quality = "simple"
         current_mietspiegel_table_cropped = current_mietspiegel_table.loc[0:48]
     elif location_quality == "mittel":
+        location_quality = "medium"
         current_mietspiegel_table_cropped = current_mietspiegel_table.loc[49:116]
     else:
+        location_quality = "good"
         current_mietspiegel_table_cropped = current_mietspiegel_table.loc[117:162]
 
-    for index, row in current_mietspiegel_table_cropped.iterrows():
-        construction_year_integer = int(str(row["Construction year (max)"])[:4])
-        apartment_size_integer = int(float(str(row["Living area (max)"]).replace(",", ".")))
-        if construction_year <= construction_year_integer and apartment_size <= apartment_size_integer:
-           print(index,row)
-           break      
- 
-    return location_quality
+    for _, row in current_mietspiegel_table_cropped.iterrows():
 
-def get_location_quality(street, house_number, postcode):
+        raw_year_cell = str(row["Construction year (max)"]).lower()
+        construction_year_integer = int(raw_year_cell[:4])
+
+        row_stadtteil = None
+        if "west" in raw_year_cell:
+            row_stadtteil = "west"
+        elif "ost" in raw_year_cell:
+            row_stadtteil = "ost"
+
+        if row_stadtteil is not None and row_stadtteil != stadtteil:
+            continue
+
+        apartment_size_integer = int(parse_number(row["Living area (max)"]))
+        if construction_year <= construction_year_integer and apartment_size <= apartment_size_integer:
+            lower = float(str(row["Lower range"]).replace(",", "."))
+            mean = float(str(row["Mean value"]).replace(",", "."))
+            upper = float(str(row["Upper range"]).replace(",", "."))
+
+            expected_lower = lower * apartment_size
+            expected_mean = mean * apartment_size
+            expected_upper = upper * apartment_size
+
+            return {
+                "location_quality": location_quality,
+                "lower_range_per_m2": lower,
+                "mean_value_per_m2": mean,
+                "upper_range_per_m2": upper,
+                "difference_lower": round((offered_rent - expected_lower) / expected_lower * 100, 2),
+                "difference_mean": round((offered_rent - expected_mean) / expected_mean * 100, 2),
+                "difference_upper": round((offered_rent - expected_upper) / expected_upper * 100, 2),
+            }  
+ 
+    return None
+
+def parse_number(s):
+    if s is None:
+        return 0.0
+    s = str(s).replace("\xa0", "") 
+    s = s.replace(",", ".")         
+    try:
+        return float(s)
+    except ValueError:
+        return 0.0
+
+def get_location_data(street, house_number, postcode):
     url = "https://gdi.berlin.de/services/wfs/wohnlagenadr2024"
 
-    # Build the CQL filter
     cql = f"strasse='{street}' AND hnr='{house_number}' AND plz='{postcode}'"
 
     params = {
@@ -158,26 +211,42 @@ def get_location_quality(street, house_number, postcode):
     }
 
     response = requests.get(url, params=params)
-
     data = response.json()
 
     if not data["features"]:
         return None
+    feature = data["features"][0]
 
-    return data["features"][0]["properties"]["wol"]
+    if isinstance(feature.get("properties"), dict):
+        properties = feature["properties"]
+        wol = properties.get("wol")
+        stadtteil = properties.get("stadtteil")
+
+    else:
+        wol = feature.get("properties")
+        stadtteil = feature.get("stadtteil") or feature.get("bezirksteil")
+
+    if wol is None or stadtteil is None:
+        return None
+
+    return {
+        "wol": wol,
+        "stadtteil": stadtteil.lower()
+    }
 
 def register_callbacks_calculator(app):
 
     @app.callback(
-        Output('calculate-comparison-button', 'style'),
-        Output('body-div', 'children'),
+        Output('calculate-comparison-button', 'style', allow_duplicate=True),
+        Output('body-div', 'children', allow_duplicate=True),
         Input('calculate-comparison-button', 'n_clicks'),
         [Input('street-input', 'value'),
          Input('house-input', 'value'),
          Input('postcode-input', 'value'),
          Input('slider-apartment-size', 'value'),
          Input('construction-year-input', 'value'),
-         Input('offered-rent-input', 'value')]
+         Input('offered-rent-input', 'value')],
+         prevent_initial_call=True
     )
     def update_output(n_clicks, street, house_number, postcode, apartment_size, construction_year,  offered_rent):
         if n_clicks is None:
@@ -187,4 +256,61 @@ def register_callbacks_calculator(app):
         else:
             hidden_style = {"display": "none"}
             result = compare_to_median_rent(street, house_number, postcode, apartment_size, construction_year,  offered_rent)
-            return hidden_style, result
+
+            difference_mean = result["difference_mean"]
+
+            if difference_mean > 0:
+                headline = f"{difference_mean}% more expensive than average"
+            elif difference_mean < 0:
+                headline = f"{abs(difference_mean)}% cheaper than average"
+            else:
+                headline = "Exactly the average rent"
+            
+            return hidden_style, html.Div([
+                html.H3(f"Location quality: {result['location_quality']}"),
+
+                html.H3(headline),
+
+                html.Hr(),
+
+                html.P(
+                    f"Lower range: {result['lower_range_per_m2']} €/m² "
+                    f"({result['difference_lower']}%)"
+                ),
+
+                html.P(
+                    f"Mean value: {result['mean_value_per_m2']} €/m² "
+                    f"({result['difference_mean']}%)"
+                ),
+
+                html.P(
+                    f"Upper range: {result['upper_range_per_m2']} €/m² "
+                    f"({result['difference_upper']}%)"
+                ),
+
+                html.Hr(),
+
+                dmc.Button(
+                    "Calculate comparison again",
+                    id="calculate-again-button",
+                    variant="default",
+                    color="#384B70",
+                    size="md",
+                    radius="md",
+                    mt=20,
+                ),
+            ])
+        
+    @app.callback(
+        Output("calculate-comparison-button", "style", allow_duplicate=True),
+        Output("body-div", "children", allow_duplicate=True),
+        Input("calculate-again-button", "n_clicks"),
+        prevent_initial_call=True,
+    )
+    def reset_calculator(n_clicks):
+        if not n_clicks:
+            raise PreventUpdate
+
+        show_style = {"display": "block"}
+
+        return show_style, None

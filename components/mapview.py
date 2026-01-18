@@ -2,6 +2,8 @@ from dash import Dash, html, dcc, callback, Output, Input, State
 import dash_mantine_components as dmc
 from dash_iconify import DashIconify
 from datetime import datetime, timedelta
+from dash.exceptions import PreventUpdate
+import pandas as pd
 
 location_text = dmc.Stack(
     [
@@ -21,10 +23,10 @@ mapview_layout = dmc.Group(
         html.Div(
             [
                 dmc.Title("Filter Options", order=5, mb=12),
-                dmc.Text("Apartment Size (m²)"),
-                dmc.Slider(
-                    id="slider-callback",
-                    value=50,
+                dmc.Text("Apartment Size (m²) Range"),
+                dmc.RangeSlider(
+                    id="apartment-size-range-input",
+                    value=[50,80],
                     max=120,
                     color="#384B70",
                     size="lg",
@@ -37,15 +39,14 @@ mapview_layout = dmc.Group(
                     mt=30,
                     mb=40,
                 ),
-                dmc.Text("Construction Year", mb=12),
+                dmc.Text("Construction Year Range", mb=12),
                 dmc.YearPickerInput(
+                    id="construction-year-range-input",
+                    type="range",
                     leftSection=DashIconify(icon="fa:calendar"),
-                    leftSectionPointerEvents="none",
-                    placeholder="Pick date",
-                    numberOfColumns=2,
+                    placeholder="Pick dates range",
                     minDate=datetime(1800,1,1),
                     maxDate=datetime.now(),
-                    value=datetime(1960, 1, 1),
                     w=200,
                     mb=30,
                 ), 
@@ -72,17 +73,17 @@ mapview_layout = dmc.Group(
                             radius="md",
                         ),]
                 ),                
-                dmc.Select(
-                    placeholder="All Categories",
-                    id="location-select",
-                    data=[
-                        {"value": "simple", "label": "Simple"},
-                        {"value": "medium", "label": "Medium"},
-                        {"value": "good", "label": "Good"},
-                    ],
-                    w=200,
-                    mb=30,
-                )
+                # dmc.Select(
+                #     placeholder="All Categories",
+                #     id="location-select",
+                #     data=[
+                #         {"value": "simple", "label": "Simple"},
+                #         {"value": "medium", "label": "Medium"},
+                #         {"value": "good", "label": "Good"},
+                #     ],
+                #     w=200,
+                #     mb=30,
+                # )
                 
             ],
             style={
@@ -95,11 +96,21 @@ mapview_layout = dmc.Group(
             }
         ),
         html.Div(
-            [
-                # html.Img(
-                #     src="/assets/wohnlagenkarte2024.png",
-                #     style={"width": "750px", "border-radius": "20px",}
-                # ),
+            
+            id="median-rent",
+            children=[
+                    dmc.Button(
+                        "Show Median Rent by District",
+                        id="show-median-rent-button",
+                        variant="default",
+                        color="#384B70",
+                        size="md",
+                        radius="md",
+                        loading=False,
+                        disabled=False,
+                        leftSection=DashIconify(icon="twemoji:magnifying-glass-tilted-left"),
+                    ),
+                    html.Div(id='body-div'),
             ],
             style={
                 "height": 550,
@@ -115,6 +126,21 @@ mapview_layout = dmc.Group(
     ]
 )
 
+BERLIN_DISTRICTS = [
+    "Charlottenburg-Wilmersdorf",
+    "Friedrichshain-Kreuzberg",
+    "Lichtenberg",
+    "Marzahn-Hellersdorf",
+    "Mitte",
+    "Neukölln",
+    "Pankow",
+    "Reinickendorf",
+    "Spandau",
+    "Steglitz-Zehlendorf",
+    "Tempelhof-Schöneberg",
+    "Treptow-Köpenick",
+]
+
 
 def register_callbacks_mapview(app):
     @app.callback(
@@ -126,5 +152,37 @@ def register_callbacks_mapview(app):
     
     def toggle_modal(n_clicks, opened):
         return not opened
+    
+    @app.callback(
+        Output('show-median-rent-button', 'style', allow_duplicate=True),
+        Output('body-div', 'children', allow_duplicate=True),
+        Input('show-median-rent-button', 'n_clicks'),
+        [Input('apartment-size-range-input', 'value'),
+         Input('construction-year-range-input', 'value'),
+        ],
+         prevent_initial_call=True
+    )
+    def update_output(n_clicks, apartment_size, construction_year):
+        if n_clicks is None:
+            raise PreventUpdate
+        elif apartment_size is None or construction_year is None:
+            raise PreventUpdate
+        else:
+            hidden_style = {"display": "none"}
+            #result = show_median_rent_by_district(apartment_size, construction_year,  location_quality)
+
+    @app.callback(
+        Output("show-median-rent-button", "style", allow_duplicate=True),
+        Output("body-div", "children", allow_duplicate=True),
+        Input("show-median-rent-again-button", "n_clicks"),
+        prevent_initial_call=True,
+    )
+    def reset_calculator(n_clicks):
+        if not n_clicks:
+            raise PreventUpdate
+
+        show_style = {"display": "block"}
+
+        return show_style, None
 
 

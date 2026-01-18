@@ -62,18 +62,18 @@ layout = dmc.AppShell(
                                     dmc.TabsList(
                                         [
                                             dmc.TabsTab(
-                                                "Map View",
-                                                leftSection=DashIconify(
-                                                    icon="twemoji:round-pushpin", width=20),
-                                                value="mapview",
-                                                fz="md",
-                                                p="md",
-                                            ),
-                                            dmc.TabsTab(
                                                 "Rent Calculator",
                                                 leftSection=DashIconify(
                                                     icon="twemoji:abacus", width=20),
                                                 value="calculator",
+                                                fz="md",
+                                                p="md",
+                                            ),
+                                            dmc.TabsTab(
+                                                "Map View",
+                                                leftSection=DashIconify(
+                                                    icon="twemoji:round-pushpin", width=20),
+                                                value="mapview",
                                                 fz="md",
                                                 p="md",
                                             ),
@@ -91,7 +91,7 @@ layout = dmc.AppShell(
                                 id="tabs",
                                 variant="default",
                                 radius="md",
-                                value="mapview",
+                                value="calculator",
                                 color="#B8001F",
                             ),
                         ]
