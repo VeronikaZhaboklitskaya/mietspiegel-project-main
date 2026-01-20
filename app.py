@@ -70,18 +70,10 @@ layout = dmc.AppShell(
                                                 p="md",
                                             ),
                                             dmc.TabsTab(
-                                                "Map View",
+                                                "Price by district",
                                                 leftSection=DashIconify(
                                                     icon="twemoji:round-pushpin", width=20),
                                                 value="mapview",
-                                                fz="md",
-                                                p="md",
-                                            ),
-                                            dmc.TabsTab(
-                                                "Price Trends",
-                                                leftSection=DashIconify(
-                                                    icon="twemoji:bar-chart", width=20),
-                                                value="trends",
                                                 fz="md",
                                                 p="md",
                                             ),

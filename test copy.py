@@ -114,6 +114,14 @@ def get_average_mean_by_quality(year_range, size_range):
 
     return {"einfach": simple_average_mean, "mittel": medium_average_mean, "gut": good_average_mean}
 
+def parse_year_range(date_range):
+    try:
+        start_year = int(str(date_range[0])[:4])
+        end_year = int(str(date_range[1])[:4])
+        return [start_year, end_year]
+    except (TypeError, ValueError, IndexError):
+        return None
+
 BERLIN_DISTRICTS = [
     "Charlottenburg-Wilmersdorf",
     "Friedrichshain-Kreuzberg",
@@ -122,11 +130,11 @@ BERLIN_DISTRICTS = [
     "Mitte",
     "Neukölln",
     "Pankow",
-    # "Reinickendorf",
-    # "Spandau",
-    # "Steglitz-Zehlendorf",
-    # "Tempelhof-Schöneberg",
-    # "Treptow-Köpenick",
+    "Reinickendorf",
+    "Spandau",
+    "Steglitz-Zehlendorf",
+    "Tempelhof-Schöneberg",
+    "Treptow-Köpenick",
 ]
 
 
