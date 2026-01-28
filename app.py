@@ -3,9 +3,8 @@ import dash_mantine_components as dmc
 import plotly.express as px
 import pandas as pd
 from dash_iconify import DashIconify
-from components.mapview import mapview_layout, register_callbacks_mapview
+from components.pricebydistrict import pricebydistrict_layout, register_callbacks_mapview
 from components.calculator import calculator_layout, register_callbacks_calculator
-from components.trends import trends_layout
 
 app = Dash(
     __name__,
@@ -73,7 +72,7 @@ layout = dmc.AppShell(
                                                 "Price by district",
                                                 leftSection=DashIconify(
                                                     icon="twemoji:round-pushpin", width=20),
-                                                value="mapview",
+                                                value="pricebydistrict",
                                                 fz="md",
                                                 p="md",
                                             ),
@@ -99,7 +98,7 @@ layout = dmc.AppShell(
         dmc.AppShellFooter(
                     html.Div(
                         [
-                            dmc.Text("Bachelor Thesis Project 2025",
+                            dmc.Text("Bachelor Thesis Project 2026",
                                      c="white", size="sm", ta="center", m=20),
                         ]
                     ),
@@ -125,13 +124,10 @@ register_callbacks_calculator(app)
 
 @callback(Output("tabs-content", "children"), Input("tabs", "value"))
 def render_content(active):
-    if active == "mapview":
-        return mapview_layout
-    elif active == "calculator":
-        return calculator_layout
+    if active == "pricebydistrict":
+        return pricebydistrict_layout
     else:
-        return trends_layout
-
+        return calculator_layout
 
 if __name__ == '__main__':
     app.run(debug=True, use_reloader=True)

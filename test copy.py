@@ -179,6 +179,6 @@ def get_average_mean_from_subset(df):
 # print(current_mietspiegel_table.columns)
 #print(current_mietspiegel_table)
 
-print(get_average_mean_by_district([1910, 1918], [40,50]))
+print(get_location_data_by_district("Pankow"))
 
 
