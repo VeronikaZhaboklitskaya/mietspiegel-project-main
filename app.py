@@ -216,6 +216,3 @@ def render_content(active):
 
 if __name__ == "__main__":
     app.run(debug=True, use_reloader=True)
-
-
-# cloudflared tunnel --url http://localhost:8050
