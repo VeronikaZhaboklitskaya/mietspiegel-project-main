@@ -119,7 +119,7 @@ calculator_layout = dmc.Group(
 )
 
 
-def compare_to_median_rent(
+def compare_to_mean_rent(
     street, house_number, postcode, apartment_size, construction_year, offered_rent
 ) -> dict | None:
 
@@ -235,14 +235,9 @@ def get_location_data(street, house_number, postcode):
         return None
     feature = data["features"][0]
 
-    if isinstance(feature.get("properties"), dict):
-        properties = feature["properties"]
-        wol = properties.get("wol")
-        stadtteil = properties.get("stadtteil")
-
-    else:
-        wol = feature.get("properties")
-        stadtteil = feature.get("stadtteil")
+    properties = feature["properties"]
+    wol = properties.get("wol")
+    stadtteil = properties.get("stadtteil")   
 
     if wol is None or stadtteil is None:
         return None
@@ -288,7 +283,7 @@ def register_callbacks_calculator(app):
             raise PreventUpdate
         else:
             hidden_style = {"display": "none"}
-            result = compare_to_median_rent(
+            result = compare_to_mean_rent(
                 street,
                 house_number,
                 postcode,
