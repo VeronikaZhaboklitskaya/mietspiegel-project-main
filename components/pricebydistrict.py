@@ -42,7 +42,7 @@ pricebydistrict_layout = dmc.Group(
                     leftSection=DashIconify(icon="fa:calendar"),
                     placeholder="Pick dates range",
                     minDate=datetime(1800, 1, 1),
-                    maxDate=datetime(2024, 1, 1),
+                    maxDate=datetime(2022, 1, 1),
                     w=200,
                     mb=30,
                 ),

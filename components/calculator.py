@@ -5,6 +5,12 @@ from datetime import datetime, timedelta
 from dash.exceptions import PreventUpdate
 import requests
 import pandas as pd
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,  # THIS is why info() was hidden
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
 
 calculator_layout = dmc.Group(
     [
@@ -59,7 +65,7 @@ calculator_layout = dmc.Group(
                     leftSection=DashIconify(icon="fa:calendar"),
                     leftSectionPointerEvents="none",
                     minDate=datetime(1800, 1, 1),
-                    maxDate=datetime(2024, 1, 1),
+                    maxDate=datetime(2022, 1, 1),
                     value=datetime(1960, 1, 1),
                     w=200,
                     mb=30,
@@ -137,12 +143,17 @@ def compare_to_median_rent(
 
     location_quality = location_data["wol"]
     stadtteil = location_data["stadtteil"].lower()
+    
+    logging.info(f"========= location_quality {location_quality} ===================")
+
 
     if location_quality is None:
         return None
 
     csv_path = "data/csv_files/2024converted.csv"
     current_mietspiegel_table = pd.read_csv(csv_path)
+    
+    logging.info(f"========= FILE READ ===================")
 
     if location_quality == "einfach":
         location_quality = "simple"
@@ -153,6 +164,8 @@ def compare_to_median_rent(
     else:
         location_quality = "good"
         current_mietspiegel_table_cropped = current_mietspiegel_table.loc[117:162]
+
+    logging.info(f"========= current_mietspiegel_table_cropped {current_mietspiegel_table_cropped} ===================")
 
     for _, row in current_mietspiegel_table_cropped.iterrows():
 
@@ -214,7 +227,9 @@ def parse_number(s):
 def get_location_data(street, house_number, postcode):
     url = "https://gdi.berlin.de/services/wfs/wohnlagenadr2024"
 
-    cql = f"strasse='{street}' AND hnr='{house_number}' AND plz='{postcode}'"
+    formatted_house_number = house_number.zfill(3)
+
+    cql = f"strasse='{street}' AND hnr='{formatted_house_number}' AND plz='{postcode}'"
 
     params = {
         "SERVICE": "WFS",
@@ -346,3 +361,14 @@ def register_callbacks_calculator(app):
         show_style = {"display": "block"}
 
         return show_style, None
+    
+    @app.callback(
+    Output("calculate-comparison-button", "n_clicks", allow_duplicate=True),
+    Input("calculate-again-button", "n_clicks"),
+    prevent_initial_call=True,
+)
+    def reset_calculate_button(n_clicks_again):
+        if not n_clicks_again:
+            raise PreventUpdate
+
+        return None 

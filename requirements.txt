@@ -1,0 +1,6 @@
+dash==3.3.0
+dash_iconify==0.1.2
+dash_mantine_components==2.4.0
+pandas==3.0.0
+plotly==6.5.0
+Requests==2.32.5
