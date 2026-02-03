@@ -7,12 +7,6 @@ import pandas as pd
 import requests
 from collections import Counter, defaultdict
 from functools import lru_cache
-import logging
-
-logging.basicConfig(
-    level=logging.INFO,  # THIS is why info() was hidden
-    format="%(asctime)s [%(levelname)s] %(message)s",
-)
 
 pricebydistrict_layout = dmc.Group(
     [
@@ -114,7 +108,6 @@ BERLIN_DISTRICTS = [
 
 @lru_cache(maxsize=15)
 def get_location_data_by_district(district):
-    logging.info(f"========= FETCHING DISTRICT {district} ===================")
     url = "https://gdi.berlin.de/services/wfs/wohnlagenadr2024"
 
     cql = f"bezname='{district}'"

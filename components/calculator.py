@@ -5,12 +5,6 @@ from datetime import datetime, timedelta
 from dash.exceptions import PreventUpdate
 import requests
 import pandas as pd
-import logging
-
-logging.basicConfig(
-    level=logging.INFO,  # THIS is why info() was hidden
-    format="%(asctime)s [%(levelname)s] %(message)s",
-)
 
 calculator_layout = dmc.Group(
     [
@@ -143,8 +137,6 @@ def compare_to_median_rent(
 
     location_quality = location_data["wol"]
     stadtteil = location_data["stadtteil"].lower()
-    
-    logging.info(f"========= location_quality {location_quality} ===================")
 
 
     if location_quality is None:
@@ -152,8 +144,6 @@ def compare_to_median_rent(
 
     csv_path = "data/csv_files/2024converted.csv"
     current_mietspiegel_table = pd.read_csv(csv_path)
-    
-    logging.info(f"========= FILE READ ===================")
 
     if location_quality == "einfach":
         location_quality = "simple"
@@ -164,8 +154,6 @@ def compare_to_median_rent(
     else:
         location_quality = "good"
         current_mietspiegel_table_cropped = current_mietspiegel_table.loc[117:162]
-
-    logging.info(f"========= current_mietspiegel_table_cropped {current_mietspiegel_table_cropped} ===================")
 
     for _, row in current_mietspiegel_table_cropped.iterrows():
 
@@ -254,7 +242,7 @@ def get_location_data(street, house_number, postcode):
 
     else:
         wol = feature.get("properties")
-        stadtteil = feature.get("stadtteil") or feature.get("bezirksteil")
+        stadtteil = feature.get("stadtteil")
 
     if wol is None or stadtteil is None:
         return None
